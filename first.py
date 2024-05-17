@@ -53,9 +53,9 @@ if app_mode == 'Email Counts VS Time':
 
 if app_mode=='From To':    
     st.title('LOAN PREDICTION :')      
-    st.image(r'C:\Users\HP\Downloads\Mail.jpg') 
+    st.image('Mail.jpg') 
     st.markdown('Dataset :')    
-    data=pd.read_csv(r'C:\Users\HP\Downloads\datasets\myemail.csv')    
+    data=pd.read_csv('myemail.csv')    
     st.write(data)    
     st.markdown('E-Mail From VS E-Mail To ')    
     st.bar_chart(data[['E-Mail From','E-Mail To']])
