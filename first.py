@@ -21,9 +21,9 @@ app_mode = st.sidebar.selectbox('Select Page', ['Email Counts VS Time', 'From To
 
 if app_mode == 'Email Counts VS Time':    
     st.title('LOAN PREDICTION :')      
-    st.image(r'C:\Users\HP\Downloads\Mail.jpg') 
+    st.image('Mail.jpg') 
     st.markdown('Dataset :')    
-    data = pd.read_csv(r'C:\Users\HP\Downloads\datasets\myemail.csv')    
+    data = pd.read_csv('myemail.csv')    
      
     # Drop rows with invalid dates
     data = data.dropna(subset=['Date Received'])
