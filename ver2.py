@@ -14,9 +14,9 @@ def sanitize_text(text):
     return sanitized
 
 # Function to convert matplotlib figure to in-memory file
-def fig_to_buffer(fig):
+def fig_to_buffer(fig, dpi=300):
     buf = io.BytesIO()
-    fig.savefig(buf, format='png')
+    fig.savefig(buf, format='png', dpi=dpi, bbox_inches='tight')
     buf.seek(0)
     return buf
 
@@ -95,27 +95,87 @@ if uploaded_file is not None:
     st.title('Content:')
     st.write(data)
     
-    app_mode = st.sidebar.selectbox('Select Visualization Type', ['Graphs', 'Word Cloud', 'Pie Chart', 'Email Counts VS Time', 'Network Graph'])
+    app_mode = st.sidebar.selectbox('Select Visualization Type', ['Graphs', 'Counts', 'Network Graph', 'Word Cloud', 'Pie Chart'])
     
     if app_mode == 'Graphs':
         st.title('Graphs:')
-        graph_type = st.sidebar.selectbox('Select Graph Type', ['Line', 'Bar'])
+        graph_type = st.sidebar.selectbox('Select Graph Type', ['Line', 'Timeline','Bar'])
         
         x_axis = st.selectbox('Select X-Axis Column', data.columns)
         y_axis = st.selectbox('Select Y-Axis Column', data.columns)
         clean_data = data.dropna(subset=[x_axis, y_axis])
         
         if graph_type == 'Line':
+            clean_data = clean_data.sort_values(by=[x_axis])
             fig = plot_line_chart(clean_data, x_axis, y_axis)
             st.pyplot(fig)
             buf = fig_to_buffer(fig)
             st.download_button(label='Download Line Chart', data=buf, file_name='line_chart.png', mime='image/png')
-        elif graph_type == 'Bar':
-            fig = plot_bar_chart(clean_data, x_axis, y_axis)
+        elif graph_type == 'Timeline':    
+            st.markdown('**Timeline**')
+            date_column = st.selectbox('Select Index:', clean_data.columns)
+
+            # Set the specified date column as the index
+            clean_data.set_index(date_column, inplace=True)
+
+            # Sort data by the index
+            clean_data.sort_index(inplace=True)
+                    
+            st.bar_chart(clean_data[[x_axis, y_axis]])
+
+        elif graph_type == 'Bar':    
+            st.markdown('**E-Mail From VS E-Mail To**')
+            clean_data = clean_data.sort_values(by=[x_axis])
+            st.bar_chart(clean_data[[x_axis, y_axis]])
+    
+    elif app_mode == 'Counts':
+        st.title('Counts')
+        
+        # Select the x-axis column
+        x_axis = st.selectbox('Select X-Axis Column', data.columns)
+        
+        # Drop rows with NaN values in the selected column
+        clean_data = data.dropna(subset=[x_axis])
+        
+        try:
+            # Count the occurrences of each unique value in the selected column
+            email_counts = clean_data[x_axis].value_counts().sort_index()
+
+            # Create the plot
+            fig = plt.figure(figsize=(30, 8))
+            plt.bar(email_counts.index, email_counts.values)
+            plt.xlabel(x_axis)
+            plt.ylabel('Counts')
+            plt.title(f'Counts per {x_axis}')
+            plt.xticks(rotation=45)
+
+            # Display the plot
             st.pyplot(fig)
             buf = fig_to_buffer(fig)
-            st.download_button(label='Download Bar Chart', data=buf, file_name='bar_chart.png', mime='image/png')
-    
+            st.download_button(label='Download Counts Plot', data=buf, file_name='counts_plot.png', mime='image/png')
+            plt.clf()  # Clear the figure
+
+            # Display the counts as a table
+            st.title('Counts Table')
+            counts_table = pd.DataFrame(email_counts).reset_index()
+            counts_table.columns = [x_axis, 'Counts']
+            st.table(counts_table)
+            
+        except Exception as e:
+            st.error(f"An error occurred while generating the email counts plot: {e}")
+
+        except Exception as e:
+            st.error(f"An error occurred while generating the email counts plot: {e}")
+
+    elif app_mode == 'Network Graph':
+        st.title('Network Graph')
+        source_column = st.selectbox('Select Source Column', data.columns)
+        target_column = st.selectbox('Select Target Column', data.columns)
+        fig = plot_network_graph(data, source_column, target_column)
+        st.pyplot(fig)
+        buf = fig_to_buffer(fig)
+        st.download_button(label='Download Network Graph', data=buf, file_name='network_graph.png', mime='image/png')
+
     elif app_mode == 'Word Cloud':
         text = ' '.join(data.dropna().astype(str).values.flatten().tolist())
         sanitized_text = sanitize_text(text)
@@ -132,40 +192,4 @@ if uploaded_file is not None:
         buf = fig_to_buffer(fig)
         st.download_button(label='Download Pie Chart', data=buf, file_name='pie_chart.png', mime='image/png')
 
-    elif app_mode == 'Email Counts VS Time':
-        st.title('Email Counts VS Time')
-        
-        # Select the x-axis column
-        x_axis = st.selectbox('Select X-Axis Column', data.columns)
-        
-        # Drop rows with NaN values in the selected column
-        clean_data = data.dropna(subset=[x_axis])
-        
-        try:
-            # Count the occurrences of each unique value in the selected column
-            email_counts = clean_data[x_axis].value_counts().sort_index()
-
-            # Create the plot
-            fig = plt.figure(figsize=(30, 8))
-            plt.plot(email_counts.index, email_counts.values)
-            plt.xlabel(x_axis)
-            plt.ylabel('Number of Emails')
-            plt.title(f'Number of Emails per {x_axis}')
-            plt.xticks(rotation=45)
-
-            # Display the plot
-            st.pyplot(fig)
-            buf = fig_to_buffer(fig)
-            st.download_button(label='Download Email Counts Plot', data=buf, file_name='email_counts_plot.png', mime='image/png')
-            plt.clf()  # Clear the figure
-        except Exception as e:
-            st.error(f"An error occurred while generating the email counts plot: {e}")
-
-    elif app_mode == 'Network Graph':
-        st.title('Network Graph')
-        source_column = st.selectbox('Select Source Column', data.columns)
-        target_column = st.selectbox('Select Target Column', data.columns)
-        fig = plot_network_graph(data, source_column, target_column)
-        st.pyplot(fig)
-        buf = fig_to_buffer(fig)
-        st.download_button(label='Download Network Graph', data=buf, file_name='network_graph.png', mime='image/png')
+   
