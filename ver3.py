@@ -97,16 +97,8 @@ if new_folder_name:
     new_folder_path = os.path.abspath(new_folder_name)  # Get the absolute path of the new folder
     os.makedirs(new_folder_path, exist_ok=True)  # Create the folder if it doesn't exist
     st.query_params["new_folder"] = new_folder_name
-    st.success(f"文件夹 '{new_folder_name}' 已创建并存储在本地！")
+    st.success(f"文件夹 '{new_folder_name}' 已创建并存储在'{new_folder_path}'")
 
-# 从浏览器的LocalStorage中获取数据
-if "new_folder" in st.query_params:
-    new_folder_name_from_storage = st.query_params["new_folder"]
-    st.info(f"从本地存储中获取的文件夹名称：{new_folder_name_from_storage}")
-
-# Print the complete path of the created folder
-if new_folder_name:
-    st.write("创建的文件夹路径:", new_folder_path)
 
 st.title("Welcome to E-mailyser")
 st.image('Mail.jpg')
