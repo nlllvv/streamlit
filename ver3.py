@@ -89,14 +89,31 @@ def plot_network_graph(data, source_column, target_column):
 # Streamlit app
 st.title("文件管理和数据处理示例")
 
-# 创建文件夹
-save_dir = st.text_input("输入要创建的文件夹名称")
-if save_dir:
-    if not os.path.exists(save_dir):
-        os.makedirs(save_dir)
-        st.success(f"文件夹 '{save_dir}' 创建成功！")
-    else:
-        st.warning(f"文件夹 '{save_dir}' 已经存在。")
+# 获取用户输入的新文件夹名称
+new_folder_name = st.text_input("输入新文件夹名称")
+
+# 存储数据到浏览器的LocalStorage中
+if new_folder_name:
+    new_folder_path = os.path.abspath(new_folder_name)  # Get the absolute path of the new folder
+    os.makedirs(new_folder_path, exist_ok=True)  # Create the folder if it doesn't exist
+    st.query_params["new_folder"] = new_folder_name
+    st.success(f"文件夹 '{new_folder_name}' 已创建并存储在本地！")
+
+# 从浏览器的LocalStorage中获取数据
+if "new_folder" in st.query_params:
+    new_folder_name_from_storage = st.query_params["new_folder"]
+    st.info(f"从本地存储中获取的文件夹名称：{new_folder_name_from_storage}")
+
+    # 获取存储在LocalStorage中的数据
+    stored_data = st.session_state.get("stored_data", "暂无数据")
+
+# 显示存储的数据
+st.write("存储的数据：", stored_data)
+
+# Print the complete path of the created folder
+if new_folder_name:
+    st.write("创建的文件夹路径:", new_folder_path)
+
 st.title("Welcome to E-mailyser")
 st.image('Mail.jpg')
 
