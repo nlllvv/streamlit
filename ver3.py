@@ -104,12 +104,6 @@ if "new_folder" in st.query_params:
     new_folder_name_from_storage = st.query_params["new_folder"]
     st.info(f"从本地存储中获取的文件夹名称：{new_folder_name_from_storage}")
 
-    # 获取存储在LocalStorage中的数据
-    stored_data = st.session_state.get("stored_data", "暂无数据")
-
-# 显示存储的数据
-st.write("存储的数据：", stored_data)
-
 # Print the complete path of the created folder
 if new_folder_name:
     st.write("创建的文件夹路径:", new_folder_path)
