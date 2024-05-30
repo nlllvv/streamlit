@@ -6,6 +6,7 @@ from wordcloud import WordCloud
 import io
 from fpdf import FPDF
 import os
+from pathlib import Path
 
 @st.cache_data
 def load_data(file):
@@ -99,6 +100,7 @@ if new_folder_name:
     st.query_params["new_folder"] = new_folder_name
     st.success(f"文件夹 '{new_folder_name}' 已创建并存储在'{new_folder_path}'")
 
+st.text(Path.cwd())  # show the current directory.
 
 st.title("Welcome to E-mailyser")
 st.image('Mail.jpg')
