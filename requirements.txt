@@ -4,4 +4,5 @@ pandas==2.2.1
 numpy==1.26.4
 networkx==3.2.1
 wordcloud==1.9.3
+fpdf==1.7.2
 # Add any other dependencies your app needs
