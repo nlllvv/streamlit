@@ -180,11 +180,11 @@ if uploaded_file is not None:
     st.logo('logo.png')
     st.sidebar.markdown('Case ID analysing:') 
     st.sidebar.subheader(title)
-    app_mode = st.sidebar.selectbox('Select Visualization Type', ['Timeline Analysis', 'Link Analysis'])
+    app_mode = st.sidebar.selectbox('Select Analysis Type', ['Timeline Analysis', 'Link Analysis'])
     
     if app_mode == 'Timeline Analysis':
         
-        graph_type = st.sidebar.selectbox('Select Graph Type', ['Line','Bar','Counts'])
+        graph_type = st.sidebar.selectbox('Select Visualization Graph Type', ['Line','Bar','Counts'])
         
         if graph_type == 'Line':
             st.header('Line Graph:')
