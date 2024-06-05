@@ -187,7 +187,7 @@ def create_network_graph(data, source_column, target_column):
 # Function to check case id
 def is_valid_caseid(caseid):
     if not caseid:
-        return False, "Case ID cannot be empty."
+        return False, "Please enter a case ID to continue. e.g. ForensiCase_01"
     if not re.match("^[a-zA-Z0-9_-]*$", caseid):
         return False, "Case ID can only contain letters, numbers, hyphens, and underscores."
     # Add any additional checks here, such as uniqueness if needed
@@ -206,189 +206,191 @@ valid, message = is_valid_caseid(caseid)
 if valid:
     st.write("New Case ID created:", caseid)
 else:
-    if message == "Case ID cannot be empty.":
+    if message == "Please enter a case ID to continue. e.g. ForensiCase_01":
         st.info(message)
     elif message == "Case ID can only contain letters, numbers, hyphens, and underscores.":
         st.warning(message)
 
-uploaded_file = st.file_uploader("Upload CSV file", type=['csv'])
+# Disable file uploader if Case ID is not valid
+if valid:
+    uploaded_file = st.file_uploader("Upload CSV file", type=['csv'])
 
-if uploaded_file is not None:
-    try:
-        data = load_data(uploaded_file)
-        with st.expander("Expand to view more details on dataset"):
-            st.header('Dataset:')
-            data.index += 1
-            st.write(data)  
+    if uploaded_file is not None:
+        try:
+            data = load_data(uploaded_file)
+            with st.expander("Expand to view more details on dataset"):
+                st.header('Dataset:')
+                data.index += 1
+                st.write(data)  
 
-            # Extract email addresses and identify ISPs
-            all_text = ' '.join(data.astype(str).values.flatten())
-            emails = extract_emails(all_text)
-            isps = identify_isps(emails)
+                # Extract email addresses and identify ISPs
+                all_text = ' '.join(data.astype(str).values.flatten())
+                emails = extract_emails(all_text)
+                isps = identify_isps(emails)
 
-            # Remove duplicates
-            unique_emails = sorted(set(emails))
-            unique_isps = sorted(set(isps))
+                # Remove duplicates
+                unique_emails = sorted(set(emails))
+                unique_isps = sorted(set(isps))
 
-            col1, col2 = st.columns(2)
-            with col1:
-                # Create DataFrame for emails and ISPs
-                email_df = pd.DataFrame(unique_emails, columns=["Emails"])
-                email_df.index += 1  # Add 1 to the index to start from 1
-                email_df.columns = ['Emails']
-                st.markdown("Emails Found")
-                st.write(email_df)
-            with col2:
-                isp_df = pd.DataFrame(unique_isps, columns=["ISPs"])
-                isp_df.index += 1  # Add 1 to the index to start from 1
-                isp_df.columns = ['ISPs']
-                st.markdown("Identified ISPs")
-                st.write(isp_df)
-                        
+                col1, col2 = st.columns(2)
+                with col1:
+                    # Create DataFrame for emails and ISPs
+                    email_df = pd.DataFrame(unique_emails, columns=["Emails"])
+                    email_df.index += 1  # Add 1 to the index to start from 1
+                    email_df.columns = ['Emails']
+                    st.markdown("Emails Found")
+                    st.write(email_df)
+                with col2:
+                    isp_df = pd.DataFrame(unique_isps, columns=["ISPs"])
+                    isp_df.index += 1  # Add 1 to the index to start from 1
+                    isp_df.columns = ['ISPs']
+                    st.markdown("Identified ISPs")
+                    st.write(isp_df)
+                            
 
-        st.logo('logo.png')
-        st.sidebar.markdown('Case ID analysing:') 
-        st.sidebar.subheader(caseid)
-        app_mode = st.sidebar.selectbox('Select Analysis Method', ['Link Analysis', 'Timeline Analysis'])
-        
-        if app_mode == 'Link Analysis':
-            graph_type = st.sidebar.selectbox('Select Visualization Graph Type', ['Network','Line','Bar'])
+            st.logo('logo.png')
+            st.sidebar.markdown('Case ID analysing:') 
+            st.sidebar.subheader(caseid)
+            app_mode = st.sidebar.selectbox('Select Analysis Method', ['Link Analysis', 'Timeline Analysis'])
             
-            if graph_type == 'Network':
-                st.header('Network Graph')
-                source_column = st.selectbox('Select Source Column', data.columns)
-                target_column = st.selectbox('Select Target Column', data.columns)
-
-                html_file = create_network_graph(data, source_column, target_column)
-
-                # Create legend with colored patches
-                legend_html = """
-                <div style="margin-bottom: 2rem;">
-                    <h6>Legend:</h6>
-                    <div style="display: flex; align-items: center; margin-bottom: 0.5rem;">
-                        <div style="width: 12px; height: 12px; background-color: blue; margin-right: 0.5rem;"></div>
-                        <span>Source Nodes</span>
-                    </div>
-                    <div style="display: flex; align-items: center; margin-bottom: 0.5rem;">
-                        <div style="width: 12px; height: 12px; background-color: green; margin-right: 0.5rem;"></div>
-                        <span>Target Nodes</span>
-                    </div>
-                    <div style="display: flex; align-items: center;">
-                        <div style="width: 12px; height: 12px; background-color: grey; margin-right: 0.5rem;"></div>
-                        <span>Default Nodes</span>
-                    </div>
-                </div>
-                """
-
-                st.markdown(legend_html, unsafe_allow_html=True)
+            if app_mode == 'Link Analysis':
+                graph_type = st.sidebar.selectbox('Select Visualization Graph Type', ['Network','Line','Bar'])
                 
-                # Display the network graph in Streamlit
-                with open(html_file, 'r', encoding='utf-8') as f:
-                    html_content = f.read()
+                if graph_type == 'Network':
+                    st.header('Network Graph')
+                    source_column = st.selectbox('Select Source Column', data.columns)
+                    target_column = st.selectbox('Select Target Column', data.columns)
 
-                
-                components.html(html_content, height=800)
-                # Clean up temporary file
-                os.remove(html_file)
+                    html_file = create_network_graph(data, source_column, target_column)
 
-                # Provide a button for the user to download the HTML file
-                st.download_button(
-                    label="Download Network Graph",
-                    data=html_content,
-                    file_name="network_graph.html",
-                    mime="text/html"
-                )
+                    # Create legend with colored patches
+                    legend_html = """
+                    <div style="margin-bottom: 2rem;">
+                        <h6>Legend:</h6>
+                        <div style="display: flex; align-items: center; margin-bottom: 0.5rem;">
+                            <div style="width: 12px; height: 12px; background-color: blue; margin-right: 0.5rem;"></div>
+                            <span>Source Nodes</span>
+                        </div>
+                        <div style="display: flex; align-items: center; margin-bottom: 0.5rem;">
+                            <div style="width: 12px; height: 12px; background-color: green; margin-right: 0.5rem;"></div>
+                            <span>Target Nodes</span>
+                        </div>
+                        <div style="display: flex; align-items: center;">
+                            <div style="width: 12px; height: 12px; background-color: grey; margin-right: 0.5rem;"></div>
+                            <span>Default Nodes</span>
+                        </div>
+                    </div>
+                    """
 
-            elif graph_type == 'Line':
-                st.header('Line Graph:')
-                axes = st.multiselect('Select Column(s)', data.columns)
-                index_column = st.selectbox('Select Index Column', data.columns)
-                clean_data = data.dropna(subset=axes)
+                    st.markdown(legend_html, unsafe_allow_html=True)
+                    
+                    # Display the network graph in Streamlit
+                    with open(html_file, 'r', encoding='utf-8') as f:
+                        html_content = f.read()
 
-                st_line_chart(clean_data, axes, index_column)
+                    
+                    components.html(html_content, height=800)
+                    # Clean up temporary file
+                    os.remove(html_file)
 
-            elif graph_type == 'Bar':    
-                st.header('Bar Graph:')
-                axes = st.multiselect('Select Column(s)', data.columns)
-                index_column = st.selectbox('Select Index Column', data.columns)
-                clean_data = data.dropna(subset=axes)
+                    # Provide a button for the user to download the HTML file
+                    st.download_button(
+                        label="Download Network Graph",
+                        data=html_content,
+                        file_name="network_graph.html",
+                        mime="text/html"
+                    )
 
-                st_bar_chart(clean_data, axes, index_column)
-
-        if app_mode == 'Timeline Analysis':
-            
-            graph_type = st.sidebar.selectbox('Select Visualization Graph Type', ['Line','Bar','Scatter'])
-            
-            if graph_type == 'Line':
-                st.header('Line Graph:')
-                try:
-                    st.info('Select "Date Received" as the x-axis column to see the occurrence of events on the timestamp.')
-                    x_axis = st.selectbox('Select X-Axis Column', data.columns)
-                    y_axis = st.selectbox('Select Y-Axis Column', data.columns)
-                    clean_data = data.dropna(subset=[x_axis, y_axis])
-
-                    clean_data = clean_data.sort_values(by=[x_axis, y_axis])
-                    fig = plot_line_chart(clean_data, x_axis, y_axis)
-                    st.pyplot(fig)
-                    buf = fig_to_buffer(fig)
-                    st.download_button(label='Download Line Chart', data=buf, file_name='line_chart.png', mime='image/png')
-                    try:
-                        st.write("Table of Selected Columns:")
-                        st.write(data[[x_axis, y_axis]])
-                    except Exception as e:
-                        st.error(f"An error occurred while displaying the table: {e}. The x-axis and y-axis must be different.")
-                except Exception as e:
-                        st.error(f"An error occurred while generating the graph.")
-    
-
-            elif graph_type == 'Bar':   
-                st.header('Bar Graph:')
-                
-                try:
-                    st.info('Bar graph is used to plot Counts in this tool.')
-                    st.info('Select "Date Received" column to see the occurrence of events on the timestamp.')
-                    # Select the x-axis column
-                    x_axis = st.selectbox('Select a data column to be counted', data.columns)
-                    # Drop rows with NaN values in the selected column
-                    clean_data = data.dropna(subset=[x_axis])
-
-                    # Count the occurrences of each unique value in the selected column
-                    email_counts = clean_data[x_axis].value_counts().sort_index()
-
-                    clean_data = clean_data.sort_values(by=[x_axis])
-                    st.markdown('Counts Plots')  
-
-                    st_bar_chart_counts(clean_data, x_axis)
-
-                    # Display the counts as a table
-                    st.markdown('Counts Table')
-                    counts_table = pd.DataFrame(email_counts).reset_index()
-                    counts_table.index += 1  # Add 1 to the index to start from 1
-                    counts_table.columns = [x_axis, 'Counts']
-                    st.table(counts_table)
-
-                except Exception as e:
-                    st.error(f"An error occurred while generating the email counts plot: {e}")  
-            
-            elif graph_type == 'Scatter':
-                st.header('Scatter Chart:')
-                try:
-                    st.info('Select "Date Received" as the index column to see the occurrence of events on the timestamp.')
-                    axes = st.multiselect('Select Columns for Scatter Chart', data.columns)
+                elif graph_type == 'Line':
+                    st.header('Line Graph:')
+                    axes = st.multiselect('Select Column(s)', data.columns)
                     index_column = st.selectbox('Select Index Column', data.columns)
-                    # Ensure selected data columns are not the same as the index column
-                    if index_column in axes:
-                        st.warning("Selected data columns must not include the index column.")
-                    else:
-                        scatter_data = data.set_index(index_column)[axes]
-                        st_scatter_chart(scatter_data)
+                    clean_data = data.dropna(subset=axes)
 
-                except Exception as e:
-                    st.error(f"An error occurred while generating the graph: {e}")          
+                    st_line_chart(clean_data, axes, index_column)
 
+                elif graph_type == 'Bar':    
+                    st.header('Bar Graph:')
+                    axes = st.multiselect('Select Column(s)', data.columns)
+                    index_column = st.selectbox('Select Index Column', data.columns)
+                    clean_data = data.dropna(subset=axes)
+
+                    st_bar_chart(clean_data, axes, index_column)
+
+            if app_mode == 'Timeline Analysis':
+                
+                graph_type = st.sidebar.selectbox('Select Visualization Graph Type', ['Line','Bar','Scatter'])
+                
+                if graph_type == 'Line':
+                    st.header('Line Graph:')
+                    try:
+                        st.info('Select "Date Received" as the x-axis column to see the occurrence of events on the timestamp.')
+                        x_axis = st.selectbox('Select X-Axis Column', data.columns)
+                        y_axis = st.selectbox('Select Y-Axis Column', data.columns)
+                        clean_data = data.dropna(subset=[x_axis, y_axis])
+
+                        clean_data = clean_data.sort_values(by=[x_axis, y_axis])
+                        fig = plot_line_chart(clean_data, x_axis, y_axis)
+                        st.pyplot(fig)
+                        buf = fig_to_buffer(fig)
+                        st.download_button(label='Download Line Chart', data=buf, file_name='line_chart.png', mime='image/png')
+                        try:
+                            st.write("Table of Selected Columns:")
+                            st.write(data[[x_axis, y_axis]])
+                        except Exception as e:
+                            st.error(f"An error occurred while displaying the table: {e}. The x-axis and y-axis must be different.")
+                    except Exception as e:
+                            st.error(f"An error occurred while generating the graph.")
         
+
+                elif graph_type == 'Bar':   
+                    st.header('Bar Graph:')
+                    
+                    try:
+                        st.info('Bar graph is used to plot Counts in this tool.')
+                        st.info('Select "Date Received" column to see the occurrence of events on the timestamp.')
+                        # Select the x-axis column
+                        x_axis = st.selectbox('Select a data column to be counted', data.columns)
+                        # Drop rows with NaN values in the selected column
+                        clean_data = data.dropna(subset=[x_axis])
+
+                        # Count the occurrences of each unique value in the selected column
+                        email_counts = clean_data[x_axis].value_counts().sort_index()
+
+                        clean_data = clean_data.sort_values(by=[x_axis])
+                        st.markdown('Counts Plots')  
+
+                        st_bar_chart_counts(clean_data, x_axis)
+
+                        # Display the counts as a table
+                        st.markdown('Counts Table')
+                        counts_table = pd.DataFrame(email_counts).reset_index()
+                        counts_table.index += 1  # Add 1 to the index to start from 1
+                        counts_table.columns = [x_axis, 'Counts']
+                        st.table(counts_table)
+
+                    except Exception as e:
+                        st.error(f"An error occurred while generating the email counts plot: {e}")  
+                
+                elif graph_type == 'Scatter':
+                    st.header('Scatter Chart:')
+                    try:
+                        st.info('Select "Date Received" as the index column to see the occurrence of events on the timestamp.')
+                        axes = st.multiselect('Select Columns for Scatter Chart', data.columns)
+                        index_column = st.selectbox('Select Index Column', data.columns)
+                        # Ensure selected data columns are not the same as the index column
+                        if index_column in axes:
+                            st.warning("Selected data columns must not include the index column.")
+                        else:
+                            scatter_data = data.set_index(index_column)[axes]
+                            st_scatter_chart(scatter_data)
+
+                    except Exception as e:
+                        st.error(f"An error occurred while generating the graph: {e}")          
+
+            
+            
         
-    
-    except Exception as e:
-        st.error(f"An error occurred while reading the CSV file: {e}. Please check the CSV file.")
-       
+        except Exception as e:
+            st.error(f"An error occurred while reading the CSV file: {e} Please check the CSV file.")
+        
