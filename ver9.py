@@ -306,8 +306,8 @@ with col2:
 st.divider()
 
 st.write('Two analysis methods are provided in this tool: ' ':mag: Timeline Analysis ' ':mag: Link Analysis')   
-st.divider()
-caseid = st.text_input("Case ID")
+
+caseid = st.text_input("**Case ID**")
 valid, message = is_valid_caseid(caseid)
 
 if valid:
