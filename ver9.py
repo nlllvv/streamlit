@@ -91,6 +91,8 @@ def st_line_chart_with_markers(data, axes, index_column):
 
         st.altair_chart(line_chart, use_container_width=True)
 
+        st.write('*Hover over the plots to view details*')
+
         # Display a table based on the selected index column and y-axis columns
         table_data = data[axes].reset_index()  # Reset index to display the index column in the table
         table_data.index += 1  # Start the table index from 1
@@ -142,6 +144,8 @@ def st_bar_chart(data, axes, index_column):
         # Display the line chart using Streamlit
         st.bar_chart(data[axes])
 
+        st.write('*Hover over the bars to view details*')
+
         table_data = data[axes].reset_index()  # Reset index to display the index column in the table
         table_data.index += 1  # Start the table index from 1
         st.markdown('Table of Selected Columns:')
@@ -177,10 +181,10 @@ def st_scatter_chart2(data):
             # Sort scatter_data based on index_column
             scatter_data.sort_values(by=index_column, inplace=True)
 
-            st.write('*Hover over the plots to view counts*')
-
             fig = px.scatter(scatter_data, x=index_column, y=axes, hover_data={'count': True})
             st.plotly_chart(fig)
+            st.write('*Hover over the plots to view counts*')
+
             
             # Display a table based on the selected index column and y-axis columns
             table_data = scatter_data
@@ -359,17 +363,19 @@ if valid:
             st.sidebar.subheader('Case ID analysing:') 
             st.sidebar.header(caseid)
             st.sidebar.divider()
+            
+            st.sidebar.subheader('Analysis Module')
+            st.sidebar.write('')
             app_mode = st.sidebar.selectbox('Select Analysis Method', ['Timeline Analysis', 'Link Analysis'])
         
-
             if app_mode == 'Timeline Analysis':
                 
                 graph_type = st.sidebar.selectbox('Select Visualization Graph Type', ['Line','Bar','Scatter'])
                 
                 if graph_type == 'Line':
-                    st.header('Line Graph:')
+                    st.header('Line Graph')
                     try:
-                        st.write('*This section helps to visualise cause and effect easier by constructing timeline of events chronologically.*')
+                        st.write('*Line graph is used  in this tool to construct **timeline of events** chronologically.*')
                         st.info('Select "Date Received" as the x-axis column to see the occurrence of events on the timestamp.')
                         x_axis = st.selectbox('Select X-Axis Column', data.columns)
                         y_axis = st.selectbox('Select Y-Axis Column', data.columns)
@@ -384,10 +390,10 @@ if valid:
         
 
                 elif graph_type == 'Bar':   
-                    st.header('Bar Graph:')
+                    st.header('Bar Graph')
                     
                     try:
-                        st.write('*Bar graph is used to plot Counts in this tool.*')
+                        st.write('*Bar graph is used in this tool to plot **counts**.*')
                         st.info('Select "Date Received" column to see the occurrence of events on the timestamp. e.g. The plots will show that there are XX emails received on date XX-XX-XX')
                         # Select the x-axis column
                         x_axis = st.selectbox('Select a data column to be counted', data.columns)
@@ -414,6 +420,8 @@ if valid:
                 
                 elif graph_type == 'Scatter':
                     st.header('Scatter Chart:')
+                    st.write('*Scatter graph is used  in this tool to connect **timeline of events** chronologically with **counts**.*')
+                        
                     try:
             
                         st_scatter_chart2(data)
@@ -426,6 +434,7 @@ if valid:
                 
                 if graph_type == 'Network':
                     st.header('Network Graph')
+                    st.write('*Network graph is used in this tool to find out the **relationship between different senders and receivers**.*')
                     source_column = st.selectbox('Select Source Column', data.columns)
                     target_column = st.selectbox('Select Target Column', data.columns)
 
@@ -477,11 +486,12 @@ if valid:
                         data.index += 1  # Start the table index from 1
                         st.write(selected_data)
                     except Exception as e:
-                        st.error(f"{e}")
+                        st.warning(f"Choose different columns for x-axis and y-axis to obtain meaningful table result: {e}")
 
 
                 elif graph_type == 'Line':
-                    st.header('Line Graph:')
+                    st.header('Line Graph')
+                    st.write('*Line graph can be used to find out the **relationship between different senders and receivers** on specific **timestamp**.*')
                     axes = st.multiselect('Select Column(s)', data.columns)
                     index_column = st.selectbox('Select Index Column', data.columns)
                     clean_data = data.dropna(subset=axes)
@@ -489,7 +499,8 @@ if valid:
                     st_line_chart_with_markers(clean_data, axes, index_column)
 
                 elif graph_type == 'Bar':    
-                    st.header('Bar Graph:')
+                    st.header('Bar Graph')
+                    st.write('*Bar graph can be used to find out the **relationship between different senders and receivers** on specific **timestamp**.*')
                     axes = st.multiselect('Select Column(s)', data.columns)
                     index_column = st.selectbox('Select Index Column', data.columns)
                     clean_data = data.dropna(subset=axes)
@@ -499,6 +510,9 @@ if valid:
             
             st.sidebar.divider()
             st.sidebar.header(':bulb: User Guide')
+            st.sidebar.markdown(' :arrow_right:[Click Here](#)', unsafe_allow_html=True)
+
+
         except Exception as e:
             st.error(f"An error occurred while reading the CSV file: {e} Please check the CSV file.")
         
