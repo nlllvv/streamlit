@@ -66,6 +66,9 @@ def plot_line_chart(data, x_axis, y_axis):
     plt.xticks(rotation=45)
     st.pyplot(fig)
     
+    buf = fig_to_buffer(plt.gcf())
+    st.download_button(label='Download Line Chart', data=buf, file_name='line_chart.png', mime='image/png')
+                   
     table_data = data[[x_axis, y_axis]].dropna().reset_index(drop=True)
     table_data.index += 1  # Start the table index from 1
     st.markdown('Table of Selected Columns:')
@@ -160,6 +163,7 @@ def st_scatter_chart(data):
 def st_scatter_chart2(data):
     try:
         st.info('Select "Date Received" as the index column to see the occurrence of events on the timestamp.')
+        
         # Allow multiple select for both axes and index_column
         axes = st.multiselect('Select Columns for Scatter Chart', data.columns)
         index_column = st.selectbox('Select Index Column', data.columns)
@@ -172,6 +176,8 @@ def st_scatter_chart2(data):
 
             # Sort scatter_data based on index_column
             scatter_data.sort_values(by=index_column, inplace=True)
+
+            st.write('*Hover over the plots to view counts*')
 
             fig = px.scatter(scatter_data, x=index_column, y=axes, hover_data={'count': True})
             st.plotly_chart(fig)
@@ -291,14 +297,16 @@ def is_valid_caseid(caseid):
     return True, ""
 
 # E-mailyser Streamlit app
-col1, col2 = st.columns([1, 6])
+col1, col2 = st.columns([1.2, 6])
 with col1:
     st.image('logo.png')
 with col2:
     st.title("Welcome to E-mailyser")
-    
-st.text('A tool designed to assist digital forensic analysis of email datasets.') 
-st.text('Two analysis methods are provided in this tool: Timeline Analysis and Link Analysis.')    
+    st.write('*A tool designed to assist digital forensic analysis of email datasets.*:sleuth_or_spy: :e-mail:') 
+st.divider()
+
+st.write('Two analysis methods are provided in this tool: ' ':mag: Timeline Analysis ' ':mag: Link Analysis')   
+st.divider()
 caseid = st.text_input("Case ID")
 valid, message = is_valid_caseid(caseid)
 
@@ -317,7 +325,7 @@ if valid:
     if uploaded_file is not None:
         try:
             data = load_data(uploaded_file)
-            with st.expander("Expand to view more details on dataset"):
+            with st.expander("Expand to view more details on dataset :arrow_down::arrow_down::arrow_down:"):
                 st.header('Dataset:')
                 data.index += 1
                 st.write(data)  
@@ -348,8 +356,9 @@ if valid:
                             
 
             st.logo('logo.png')
-            st.sidebar.markdown('Case ID analysing:') 
-            st.sidebar.subheader(caseid)
+            st.sidebar.subheader('Case ID analysing:') 
+            st.sidebar.header(caseid)
+            st.sidebar.divider()
             app_mode = st.sidebar.selectbox('Select Analysis Method', ['Timeline Analysis', 'Link Analysis'])
         
 
@@ -360,6 +369,7 @@ if valid:
                 if graph_type == 'Line':
                     st.header('Line Graph:')
                     try:
+                        st.write('*This section helps to visualise cause and effect easier by constructing timeline of events chronologically.*')
                         st.info('Select "Date Received" as the x-axis column to see the occurrence of events on the timestamp.')
                         x_axis = st.selectbox('Select X-Axis Column', data.columns)
                         y_axis = st.selectbox('Select Y-Axis Column', data.columns)
@@ -367,10 +377,7 @@ if valid:
 
                         clean_data = clean_data.sort_values(by=[x_axis, y_axis])
                         plot_line_chart(clean_data, x_axis, y_axis)
-                        
-                        buf = fig_to_buffer(plt.gcf())
-                        st.download_button(label='Download Line Chart', data=buf, file_name='line_chart.png', mime='image/png')
-                        
+                             
                     except Exception as e:
                         st.warning(f"Choose different columns for x-axis and y-axis to obtain meaningful table result: {e}.")
                 
@@ -380,7 +387,7 @@ if valid:
                     st.header('Bar Graph:')
                     
                     try:
-                        st.write('Bar graph is used to plot Counts in this tool.')
+                        st.write('*Bar graph is used to plot Counts in this tool.*')
                         st.info('Select "Date Received" column to see the occurrence of events on the timestamp. e.g. The plots will show that there are XX emails received on date XX-XX-XX')
                         # Select the x-axis column
                         x_axis = st.selectbox('Select a data column to be counted', data.columns)
@@ -454,6 +461,7 @@ if valid:
                     # Clean up temporary file
                     os.remove(html_file)
 
+                    st.divider()
                     # Provide a button for the user to download the HTML file
                     st.download_button(
                         label="Download Network Graph",
@@ -489,8 +497,8 @@ if valid:
                     st_bar_chart(clean_data, axes, index_column)          
 
             
-            
-        
+            st.sidebar.divider()
+            st.sidebar.header(':bulb: User Guide')
         except Exception as e:
             st.error(f"An error occurred while reading the CSV file: {e} Please check the CSV file.")
         
