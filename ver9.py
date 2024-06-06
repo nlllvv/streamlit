@@ -462,11 +462,15 @@ if valid:
                         mime="text/html"
                     )
 
-                     # Display the data used for the network graph as a table
-                    st.markdown('Table of Selected Columns:')
-                    selected_data = data[[source_column, target_column]]
-                    data.index += 1  # Start the table index from 1
-                    st.write(selected_data)
+                    try:
+                        # Display the data used for the network graph as a table
+                        st.markdown('Table of Selected Columns:')
+                        selected_data = data[[source_column, target_column]]
+                        data.index += 1  # Start the table index from 1
+                        st.write(selected_data)
+                    except Exception as e:
+                        st.error(f"{e}")
+
 
                 elif graph_type == 'Line':
                     st.header('Line Graph:')
