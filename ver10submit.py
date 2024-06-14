@@ -159,6 +159,10 @@ def st_bar_chart(data, axes, index_column):
         st.markdown('Table of Selected Columns:')
         st.dataframe(table_data, width=1000, height=400)
 
+import streamlit as st
+import pandas as pd
+import plotly.express as px
+
 def st_scatter_chart(data):
     try:
         st.info('Select "Date Received" as the index column to see the occurrence of events on the timestamp.')
@@ -174,17 +178,20 @@ def st_scatter_chart(data):
             data = parse_date_column(data, index_column)
             
             scatter_data = data.set_index(index_column)[axes].reset_index()
-            scatter_data['count'] = scatter_data.groupby(index_column).transform('count').iloc[:, 0]
+            scatter_data['total_counts'] = scatter_data.groupby(index_column).transform('count').iloc[:, 0]
+    
+            # Remove duplicates based on index_column and axes
+            scatter_data.drop_duplicates(subset=[index_column] + axes, inplace=True)
     
             # Sort scatter_data based on index_column
             scatter_data.sort_values(by=index_column, inplace=True)
     
-            fig = px.scatter(scatter_data, x=index_column, y=axes, hover_data={'count': True})
+            fig = px.scatter(scatter_data, x=index_column, y=axes, hover_data={'total_counts': True})
             st.plotly_chart(fig)
             st.write('*Hover over the plots to view counts*')
     
             # Display a table based on the selected index column and y-axis columns
-            table_data = scatter_data
+            table_data = scatter_data.copy()  # Make a copy of scatter_data
             table_data.index += 1  # Start the table index from 1
             st.markdown('Table of Selected Columns:')
             st.dataframe(table_data, width=1000, height=400)
@@ -458,7 +465,7 @@ if valid:
             
             st.sidebar.divider()
             st.sidebar.header(':bulb: User Guide')
-            st.sidebar.markdown(' :arrow_right:[Click Here](#)', unsafe_allow_html=True)
+            st.sidebar.markdown(' :arrow_right:[Click Here](https://uthmedumy-my.sharepoint.com/:w:/g/personal/ai210382_student_uthm_edu_my/EZ-yhxx-5pFLsCn5sIe4mtEBzJkER_DRqGPb-VsJ-ACpYw?e=aLPfuZ)', unsafe_allow_html=True)
 
 
         except Exception as e:
