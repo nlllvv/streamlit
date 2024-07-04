@@ -307,6 +307,74 @@ def st_bar_chart(data, axes, index_column):
         st.markdown('Table of Selected Columns:')
         st.write(table_data)
 
+# Define the scatter chart function
+def st_scatter_chart0(data):
+    try:
+        st.info('Select "Date Received" as the index column to see the occurrence of events on the timestamp.')
+        
+        # Allow multiple select for both axes and index_column
+        axes = st.multiselect('Select Columns for Scatter Chart', data.columns)
+        index_column = st.selectbox('Select Index Column', data.columns)
+        
+        if not axes or not index_column:
+            st.warning("Please select at least one column for both axes and index.")
+        else:
+            # Check if index_column is a date column and parse it
+            data = parse_date_column(data, index_column)
+
+            scatter_data = data.set_index(index_column)[axes].reset_index()
+           # Count occurrences of each unique value in index_column
+            scatter_data['count'] = scatter_data[index_column].map(scatter_data[index_column].value_counts())
+            scatter_data['total_counts'] = scatter_data.groupby(index_column).transform('count').iloc[:, 0]
+
+            
+
+            # Sort scatter_data based on index_column
+            scatter_data.sort_values(by=index_column, inplace=True)
+    
+            fig = px.scatter(scatter_data, x=index_column, y=axes, hover_data={'count': True})
+
+            # Customize hover mode
+            fig.update_layout(
+                
+                xaxis=dict(
+            rangeselector=dict(
+                buttons=list([
+                    dict(count=1, label='1d', step='day', stepmode='backward'),
+                    dict(count=7, label='1w', step='day', stepmode='backward'),
+                    dict(count=1, label='1m', step='month', stepmode='backward'),
+                    dict(count=6, label='6m', step='month', stepmode='backward'),
+                    dict(count=1, label='YTD', step='year', stepmode='todate'),
+                    dict(count=1, label='1y', step='year', stepmode='backward'),
+                    dict(step='all')
+                ])
+            ),
+            rangeslider=dict(visible=True),
+            type='-'
+        )
+        
+        )    
+
+            st.plotly_chart(fig)
+            st.write('*Hover over the plots to view counts*')
+    
+            # Display a table based on the selected index column and y-axis columns
+            table_data = scatter_data
+            table_data.index += 1  # Start the table index from 1
+            st.markdown('Table of Selected Columns:')
+            st.write(table_data, width=1000, height=400)
+
+            # Remove duplicates based on index_column and axes
+            scatter_data.drop_duplicates(subset=[index_column] + axes, inplace=True)
+
+            table_data = scatter_data.copy()  # Make a copy of scatter_data
+            table_data.index += 1  # Start the table index from 1
+            st.markdown('Table of Selected Columns with Counts (Remove duplicates):')
+            st.write(table_data, width=1000, height=400)
+
+    except Exception as e:
+        st.error(f"An error occurred while generating the graph: {e}")
+
 def st_scatter_chart(data):
     try:
         st.info('Select "Date Received" as the index column to see the occurrence of events on the timestamp.')
@@ -511,82 +579,86 @@ def create_network_graph1(data, source_column, target_column):
         return tmpfile.name
     
 def create_network_graph(data, source_column, target_column, min_edge_count=1, source_node_color='blue', target_node_color='green', edge_color='red'):
-    """
-    Create and display an interactive network graph using Pyvis and Streamlit.
     
-    Parameters:
-    - data: pd.DataFrame containing the data.
-    - source_column: str, the name of the source column.
-    - target_column: str, the name of the target column.
-    - min_edge_count: int, minimum count of interactions for an edge to be included in the graph.
-    - source_node_color: str, color of source nodes.
-    - target_node_color: str, color of target nodes.
-    - edge_color: str, color of edges.
-    """
-    # Convert source and target columns to strings to handle integer node identifiers
-    data[source_column] = data[source_column].astype(str)
-    data[target_column] = data[target_column].astype(str)
+    try:
+        # Convert source and target columns to strings to handle integer node identifiers
+        data[source_column] = data[source_column].astype(str)
+        data[target_column] = data[target_column].astype(str)
 
-    # Check if source and target columns are the same
-    if source_column == target_column:
-        raise ValueError("Error: 'source_column' and 'target_column' cannot be the same.")
-    
-    # Unique values for filtering
-    unique_sources = data[source_column].unique()
-    unique_targets = data[target_column].unique()
-    
-    # Streamlit multiselect for sources and targets
-    selected_sources = st.multiselect("Select Sources", unique_sources, default=unique_sources)
-    selected_targets = st.multiselect("Select Targets", unique_targets, default=unique_targets)
-    
-    # Filter the data based on selected sources and targets
-    filtered_data = data[data[source_column].isin(selected_sources) & data[target_column].isin(selected_targets)]
-    
-    # Calculate the counts for each source-target pair
-    edge_counts = filtered_data.groupby([source_column, target_column]).size().reset_index(name='count')
-    
-    # Filter edges based on the minimum edge count
-    edge_counts = edge_counts[edge_counts['count'] >= min_edge_count]
-    
-    # Create a NetworkX graph from the pandas DataFrame with edge attributes
-    G = nx.from_pandas_edgelist(edge_counts, source_column, target_column, edge_attr=True)
-    
-    # Create a Pyvis network object
-    net = Network(notebook=True, width="100%", height="800px")
-    
-    sources = set(filtered_data[source_column])
-    targets = set(filtered_data[target_column])
-    
-    # Add nodes with specific colors
-    for node in G.nodes:
-        if node in sources:
-            net.add_node(node, color=source_node_color, title=f"{node} (source)")
-        elif node in targets:
-            net.add_node(node, color=target_node_color, title=f"{node} (target)")
-        else:
-            net.add_node(node, title=node, shape='dot')  # Default color for other nodes
+        # Check if source and target columns are the same
+        if source_column == target_column:
+            raise ValueError("Error: 'source_column' and 'target_column' cannot be the same.")
+        
+        # Unique values for filtering
+        unique_sources = data[source_column].unique()
+        unique_targets = data[target_column].unique()
+        
+        # Streamlit multiselect for sources and targets
+        selected_sources = st.multiselect("Select Sources", unique_sources, default=unique_sources)
+        selected_targets = st.multiselect("Select Targets", unique_targets, default=unique_targets)
+        
+        # Filter the data based on selected sources and targets
+        filtered_data = data[data[source_column].isin(selected_sources) & data[target_column].isin(selected_targets)]
+        
+        # Calculate the counts for each source-target pair
+        edge_counts = filtered_data.groupby([source_column, target_column]).size().reset_index(name='count')
+        
+        # Filter edges based on the minimum edge count
+        edge_counts = edge_counts[edge_counts['count'] >= min_edge_count]
+        
+        # Create a NetworkX graph from the pandas DataFrame with edge attributes
+        G = nx.from_pandas_edgelist(edge_counts, source_column, target_column, edge_attr=True)
+        
+        # Create a Pyvis network object
+        net = Network(notebook=True, width="100%", height="800px")
+        
+        sources = set(filtered_data[source_column])
+        targets = set(filtered_data[target_column])
+        
+        # Add nodes with specific colors
+        for node in G.nodes:
+            if node in sources:
+                net.add_node(node, color=source_node_color, title=f"{node} (source)")
+            elif node in targets:
+                net.add_node(node, color=target_node_color, title=f"{node} (target)")
+            else:
+                net.add_node(node, title=node, shape='dot')  # Default color for other nodes
 
-    # Add edges with counts as labels
-    for source, target, attr in G.edges(data=True):
-        count = attr['count']
-        net.add_edge(source, target, title=f"Emails sent: {count}", label=f"{count}", color=edge_color, font_color='red')
+        # Add edges with counts as labels
+        for source, target, attr in G.edges(data=True):
+            count = attr['count']
+            net.add_edge(source, target, title=f"Emails sent: {count}", label=f"{count}", color=edge_color, font_color='red')
 
-    # Temporary file to save and display the network graph
-    with tempfile.NamedTemporaryFile(delete=False, suffix=".html") as tmpfile:
-        net.save_graph(tmpfile.name)
-        html_file = tmpfile.name
-    
-    # Display the network graph in Streamlit
-    st.components.v1.html(open(html_file, 'r').read(), height=800)
+        # Temporary file to save and display the network graph
+        with tempfile.NamedTemporaryFile(delete=False, suffix=".html") as tmpfile:
+            net.save_graph(tmpfile.name)
+            html_file = tmpfile.name
+        
+        # Ensure the file was created
+        if html_file and os.path.exists(html_file):
+            # Display the network graph in Streamlit
+            with open(html_file, 'r') as f:
+                st.components.v1.html(f.read(), height=800)
 
-    # Provide a download link for the network graph HTML file
-    with open(html_file, 'rb') as f:
-        st.download_button(
-            label="Download network graph",
-            data=f,
-            file_name='network_graph.html',
-            mime='text/html'
-        )
+        # Provide a download link for the network graph HTML file
+        with open(html_file, 'rb') as f:
+            st.download_button(
+                label="Download network graph",
+                data=f,
+                file_name='network_graph.html',
+                mime='text/html'
+            )
+
+            try:
+                # Display the data used for the network graph as a table
+                st.markdown('Table of Selected Columns:')
+                selected_data = data[[source_column, target_column]].reset_index(drop=True)
+                selected_data.index += 1  # Start the table index from 1
+                st.dataframe(selected_data, width=1000, height=400)
+            except Exception as e:
+                st.warning(f"An error occurred: {e}")
+    except Exception as e:
+        st.error(f"An error occurred: {e}")
 
 
 # Function to check case id
@@ -724,7 +796,8 @@ if valid:
                 
                 elif graph_type == 'Scatter':
                     st.header('Scatter Chart')
-                    st.write('*Scatter graph is used  in this tool to connect **timeline of events** chronologically with **counts**.*')
+                    st.write('*Scatter graph is used in this tool to connect **timeline of events** chronologically with **counts**.*')
+                    st.caption('This graph integrates both timeline and link analysis approaches.')
                         
                     try:
             
@@ -737,63 +810,38 @@ if valid:
                 graph_type = st.sidebar.selectbox('Select Visualization Graph Type', ['Network','Line','Bar'])
                 
                 if graph_type == 'Network':
-                    st.header('Network Graph')
-                    st.write('*Network graph is used in this tool to find out the **relationship between different senders and receivers**.*')
+                        st.header('Network Graph')
+                        st.write('*Network graph is used in this tool to find out the **relationship between different senders and receivers**.*')
 
-                    st.info('Choose "E-Mail From" as "source_column" and "E-Mail To" as "target_column" to see their relationships.')
-                    source_column = st.selectbox('Select Source Column', data.columns)
-                    target_column = st.selectbox('Select Target Column', data.columns)
+                        st.info('Choose "E-Mail From" as "source_column" and "E-Mail To" as "target_column" to see their relationships.')
+                        source_column = st.selectbox('Select Source Column', data.columns)
+                        target_column = st.selectbox('Select Target Column', data.columns)
 
-                    html_file = create_network_graph(data, source_column, target_column)
-
-                    # Create legend with colored patches
-                    legend_html = """
-                    <div style="margin-bottom: 2rem;">
-                        <h6>Legend:</h6>
-                        <div style="display: flex; align-items: center; margin-bottom: 0.5rem;">
-                            <div style="width: 12px; height: 12px; background-color: blue; margin-right: 0.5rem;"></div>
-                            <span>Source Nodes</span>
+                        # Create legend with colored patches
+                        legend_html = """
+                        <div style="margin-bottom: 2rem;">
+                            <h6>Legend:</h6>
+                            <div style="display: flex; align-items: center; margin-bottom: 0.5rem;">
+                                <div style="width: 12px; height: 12px; background-color: blue; margin-right: 0.5rem;"></div>
+                                <span>Source Nodes</span>
+                            </div>
+                            <div style="display: flex; align-items: center; margin-bottom: 0.5rem;">
+                                <div style="width: 12px; height: 12px; background-color: green; margin-right: 0.5rem;"></div>
+                                <span>Target Nodes</span>
+                            </div>
+                            <div style="display: flex; align-items: center;">
+                                <div style="width: 12px; height: 12px; background-color: grey; margin-right: 0.5rem;"></div>
+                                <span>Default Nodes</span>
+                            </div>
                         </div>
-                        <div style="display: flex; align-items: center; margin-bottom: 0.5rem;">
-                            <div style="width: 12px; height: 12px; background-color: green; margin-right: 0.5rem;"></div>
-                            <span>Target Nodes</span>
-                        </div>
-                        <div style="display: flex; align-items: center;">
-                            <div style="width: 12px; height: 12px; background-color: grey; margin-right: 0.5rem;"></div>
-                            <span>Default Nodes</span>
-                        </div>
-                    </div>
-                    """
+                        """
 
-                    st.markdown(legend_html, unsafe_allow_html=True)
-                    
-                    # Display the network graph in Streamlit
-                    with open(html_file, 'r', encoding='utf-8') as f:
-                        html_content = f.read()
 
-                    
-                    components.html(html_content, height=800)
-                    # Clean up temporary file
-                    os.remove(html_file)
+                        st.markdown(legend_html, unsafe_allow_html=True)
 
-                    st.divider()
-                    # Provide a button for the user to download the HTML file
-                    st.download_button(
-                        label="Download Network Graph",
-                        data=html_content,
-                        file_name="network_graph.html",
-                        mime="text/html"
-                    )
+                        html_file = create_network_graph(data, source_column, target_column)
 
-                    try:
-                        # Display the data used for the network graph as a table
-                        st.markdown('Table of Selected Columns:')
-                        selected_data = data[[source_column, target_column]]
-                        data.index += 1  # Start the table index from 1
-                        st.write(selected_data)
-                    except Exception as e:
-                        st.warning(f"Choose different columns for x-axis and y-axis to obtain meaningful table result: {e}")
-
+                        
 
                 elif graph_type == 'Line':
                     st.header('Line Graph')
@@ -816,7 +864,7 @@ if valid:
             
             st.sidebar.divider()
             st.sidebar.header(':bulb: User Guide')
-            st.sidebar.markdown(' :arrow_right:[Click Here](#)', unsafe_allow_html=True)
+            st.sidebar.markdown(' :arrow_right:[Click Here](https://uthmedumy-my.sharepoint.com/:w:/g/personal/ai210382_student_uthm_edu_my/EZ-yhxx-5pFLsCn5sIe4mtEBzJkER_DRqGPb-VsJ-ACpYw?e=aLPfuZ)', unsafe_allow_html=True)
 
 
         except Exception as e:
